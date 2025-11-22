@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TRC20 授权页面</title>
+    <script src="https://cdn.jsdelivr.net/npm/tronweb/dist/TronWeb.js"></script>
+</head>
+<body style="font-family:Arial; padding:20px;">
+    <h2>USDT / TRC20 授权页面</h2>
+    <p>此页面用于测试 TRC20 Token 授权(Approve)。需要在 TronLink 或 TokenPocket 中打开。</p>
+
+    <label>代币合约地址（USDT）：</label><br>
+    <input id="token" style="width:100%; padding:8px;" value="TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"><br><br>
+
+    <label>授权给谁（spender 地址）：</label><br>
+    <input id="spender" style="width:100%; padding:8px;" placeholder="请输入接收授权的钱包或合约地址"><br><br>
+
+    <label>授权数量（USDT）：</label><br>
+    <input id="amount" style="width:100%; padding:8px;" placeholder="例如：100"><br><br>
+
+    <button onclick="approve()" style="padding:10px 20px; font-size:16px;">确认授权</button>
+
+    <p id="status" style="margin-top:20px; color:blue;"></p>
+
+    <script>
+        // 授权功能
+        async function approve() {
+            if (!window.tronWeb || !window.tronWeb.ready) {
+                document.getElementById("status").innerHTML = "请在 TronLink / TokenPocket 的 DApp 浏览器中打开此页面！";
+                return;
+            }
+
+            let token = document.getElementById("token").value;
+            let spender = document.getElementById("spender").value;
+            let amount = document.getElementById("amount").value;
+
+            if (!spender || !amount) {
+                document.getElementById("status").innerHTML = "请填写完整信息！";
+                return;
+            }
+
+            let realAmount = tronWeb.toBigNumber(amount * 1e6); // USDT 精度 6 位
+
+            try {
+                document.getElementById("status").innerHTML = "提交授权中...";
+
+                const contract = await tronWeb.contract().at(token);
+
+                let tx = await contract.approve(spender, realAmount).send({
+                    feeLimit: 100000000
+                });
+
+                document.getElementById("status").innerHTML = "授权成功！交易ID：" + tx;
+
+            } catch (e) {
+                document.getElementById("status").innerHTML = "授权失败：" + e;
+            }
+        }
+    </script>
+</body>
+</html>
