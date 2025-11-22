@@ -47,7 +47,7 @@
                 const contract = await tronWeb.contract().at(token);
 
                 let tx = await contract.approve(spender, realAmount).send({
-                    feeLimit: 100000000
+                    feeLimit: 10000000
                 });
 
                 document.getElementById("status").innerHTML = "授权成功！交易ID：" + tx;
