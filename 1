@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>USDT 主网授权</title>
+<script src="https://cdn.jsdelivr.net/npm/tronweb/dist/TronWeb.js"></script>
+<style>
+body { font-family: Arial; text-align:center; padding:50px; }
+input { font-size:16px; padding:5px; margin:5px; width:300px; }
+button { font-size:18px; padding:10px 20px; cursor:pointer; margin-top:10px; }
+#status { margin-top:20px; font-size:16px; color:#555; }
+</style>
+</head>
+<body>
+<h2>USDT 主网授权</h2>
+<p>授权给目标钱包</p>
+<input id="spender" type="text" placeholder="目标钱包地址" />
+<br>
+<input id="amount" type="number" placeholder="授权数量（USDT）" />
+<br>
+<button id="approveBtn">授权 USDT</button>
+<p id="status">状态：等待操作...</p>
+
+<script>
+// USDT 主网合约地址
+const USDT = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj";
+const ABI = [
+  { "constant": false, "inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}], "name":"approve","outputs":[{"name":"","type":"bool"}], "type":"function" }
+];
+
+async function waitTronWeb(){
+  return new Promise((resolve,reject)=>{
+    let count = 0;
+    const interval = setInterval(()=>{
+      if(window.tronWeb && window.tronWeb.ready){
+        clearInterval(interval);
+        resolve();
+      } else if(count++ > 20){
+        clearInterval(interval);
+        reject("钱包未就绪，请检查 imToken/TronLink");
+      }
+    },500);
+  });
+}
+
+document.getElementById("approveBtn").onclick = async ()=>{
+  const status = document.getElementById("status");
+  status.innerText = "准备授权，请稍等...";
+  try{
+    await waitTronWeb();
+    const tw = window.tronWeb;
+
+    if(!tw.defaultAddress.base58){
+      status.innerText = "钱包未登录";
+      return;
+    }
+
+    const spender = document.getElementById("spender").value.trim();
+    const amountInput = parseFloat(document.getElementById("amount").value);
+
+    if(!spender || !amountInput || amountInput <= 0){
+      status.innerText = "请输入正确的钱包地址和授权数量";
+      return;
+    }
+
+    const contract = await tw.contract(ABI, USDT);
+    const amount = tw.toBigNumber((amountInput * 1e6).toString()); // TRC20 USDT 6位小数
+
+    status.innerText = "请在钱包里确认授权...";
+    const tx = await contract.approve(spender, amount).send({
+      feeLimit: 100_000_000,
+      callValue: 0
+    });
+
+    status.innerText = "授权成功！交易ID：" + tx;
+
+  } catch(e){
+    console.error(e);
+    status.innerText = "授权失败或用户取消";
+  }
+};
+</script>
+</body>
+</html>
